@@ -1,3 +1,7 @@
+# - 코드 품질검사
+# - 유닛 테스트
+# - 컨테이너 빌드
+# - kubeflow pipeline 트리거
 name: CI Pipeline
 
 on:
