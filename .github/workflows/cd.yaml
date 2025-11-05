@@ -1,0 +1,83 @@
+name: CD Pipeline - Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_version:
+        description: 'MLflow Model Registry Version'
+        required: true
+      deployment_strategy:
+        description: 'Deployment Strategy'
+        type: choice
+        options:
+          - canary
+          - rolling
+        default: canary
+
+jobs:
+  approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    environment:
+      name: production-approval
+    steps:
+      - name: Waiting for approval
+        run: echo "Deployment approved for model version ${{ github.event.inputs.model_version }}"
+
+  deploy-canary:
+    name: Deploy Canary
+    runs-on: ubuntu-latest
+    needs: approval
+    environment:
+      name: production
+      url: https://model-api.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install kubernetes mlflow prometheus-api-client
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+      - name: Deploy Canary (10%)
+        run: |
+          python scripts/deploy_kserve.py \
+            --model-version ${{ github.event.inputs.model_version }} \
+            --namespace production \
+            --strategy canary \
+            --canary-percent 10
+
+      - name: Monitor Canary
+        id: monitor
+        run: |
+          python scripts/monitor_canary.py \
+            --duration 600 \
+            --error-threshold 0.01 \
+            --latency-threshold 500
+        continue-on-error: true
+
+      - name: Progressive Rollout
+        if: steps.monitor.outcome == 'success'
+        run: |
+          python scripts/progressive_rollout.py \
+            --namespace production \
+            --stages 10,25,50,75,100 \
+            --wait-time 300
+
+      - name: Rollback on Failure
+        if: steps.monitor.outcome == 'failure'
+        run: |
+          python scripts/rollback.py \
+            --namespace production \
+            --to-stable
+          exit 1

@@ -1,0 +1,1 @@
+# Kubeflow Pipeline 트리거 스크립트

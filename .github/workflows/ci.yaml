@@ -1,0 +1,151 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [main, staging]
+    paths:
+      - 'models/**'
+      - 'pipelines/**'
+      - 'tests/**'
+  push:
+    branches: [dev, 'feature/**']
+
+env:
+  PYTHON_VERSION: '3.9'
+  MLFLOW_TRACKING_URI: http://mlflow-server.mlflow.svc.cluster.local:5000
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          pip install black flake8 pylint mypy bandit
+
+      - name: Code formatting (Black)
+        run: black --check models/ pipelines/ scripts/
+
+      - name: Linting (Flake8)
+        run: flake8 models/ pipelines/ scripts/ --max-line-length=100
+
+      - name: Type checking (MyPy)
+        run: mypy models/ pipelines/ scripts/ --ignore-missing-imports
+
+      - name: Security scan (Bandit)
+        run: bandit -r models/ pipelines/ scripts/ -ll
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-mock
+
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ \
+            --cov=models \
+            --cov=pipelines \
+            --cov-report=xml \
+            --cov-report=html \
+            --junitxml=test-results.xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+
+  build-image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ghcr.io/${{ github.repository }}/model:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/model:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  trigger-kubeflow:
+    name: Trigger Kubeflow Pipeline
+    runs-on: ubuntu-latest
+    needs: build-image
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install KFP SDK
+        run: pip install kfp
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+      - name: Trigger Kubeflow Pipeline
+        run: |
+          python scripts/trigger_kfp.py \
+            --pipeline-name "ml-training-deployment" \
+            --git-commit ${{ github.sha }} \
+            --image ghcr.io/${{ github.repository }}/model:${{ github.sha }}
+
+      - name: Wait for pipeline
+        run: |
+          RUN_ID=$(jq -r '.run_id' kfp_run.json)
+          python scripts/wait_pipeline.py --run-id $RUN_ID --timeout 3600
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: pipeline-output
+          path: kfp_run.json

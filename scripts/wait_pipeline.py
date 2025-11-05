@@ -1,0 +1,1 @@
+# Kubeflow Pipeline 완료 대기 스크립트
