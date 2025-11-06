@@ -104,8 +104,8 @@ jobs:
             harbor.gke.paasup.io/org/model:latest
           build-args: |
             BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
-          # cache-from: type=gha
-          # cache-to: type=gha,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           network: host
 
   trigger-kubeflow:
