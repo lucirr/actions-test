@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+FROM python:3.10-slim
 
 WORKDIR /workspace
 
@@ -25,3 +25,6 @@ ENV PYTHONUNBUFFERED=1
 
 # 기본 작업 디렉토리
 WORKDIR /workspace
+
+EXPOSE 8000
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

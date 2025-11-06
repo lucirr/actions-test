@@ -84,11 +84,9 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Login to Registry
-        env:
-          DOCKER_TLS_VERIFY: 0
         uses: docker/login-action@v2
         with:
-          registry: harbor.hopt.paasup.io
+          registry: harbor.gke.paasup.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
@@ -98,13 +96,12 @@ jobs:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: |
-            harbor.hopt.paasup.io/org/model:${{ github.sha }}
-            harbor.hopt.paasup.io/org/model:latest
+            harbor.gke.paasup.io/org/model:${{ github.sha }}
+            harbor.gke.paasup.io/org/model:latest
           build-args: |
             BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
-          # cache-from: type=gha
-          # cache-to: type=gha,mode=max
-          network: host
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   trigger-kubeflow:
     name: Trigger Kubeflow Pipeline
@@ -132,4 +129,5 @@ jobs:
       - name: Trigger Kubeflow Pipeline
         run: |
           python scripts/trigger_kfp.py \
-            --image harbor.hopt.paasup.io/org/model:${{ github.sha }}
+            --image harbor.gke.paasup.io/org/model:${{ github.sha }}
+            --model_name model-training

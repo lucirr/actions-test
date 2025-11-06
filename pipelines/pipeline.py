@@ -1,9 +1,9 @@
 # kubeflow pipeline
 from kfp import Client
 from kfp import dsl
-from kfp.compiler import Compiler
 
 KFP_ENDPOINT = "http://KUBEFLOW_URL/pipeline"
+
 
 # Kubeflow Pipeline 정의
 @dsl.pipeline(
@@ -51,7 +51,7 @@ def run_pipeline(image: str, model_name: str):
         }
     )
 
-    print(f" Kubeflow Pipeline triggered!")
+    print(" Kubeflow Pipeline triggered!")
     print(f"   run id: {run.run_id}")
 
 
@@ -62,4 +62,3 @@ if __name__ == "__main__":
     model_name = "my-demo-model"
 
     run_pipeline(image, model_name)
-
