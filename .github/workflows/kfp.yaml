@@ -1,5 +1,5 @@
 # - kubeflow pipeline 트리거
-name: CI Pipeline
+name: KFP Pipeline
 
 on:
   workflow_dispatch:
