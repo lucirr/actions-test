@@ -12,7 +12,7 @@ from string import Template
 
 
 def load_template(template_path: str) -> str:
-    """YAML 템플릿 파일을 로드합니다."""
+    """YAML 템플릿 파일을 로드합니다"""
     with open(template_path, 'r', encoding='utf-8') as f:
         return f.read()
 
