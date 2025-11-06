@@ -12,6 +12,13 @@ on:
       - "pipelines/**"
       - "scripts/**"
       - "tests/**"
+  push:
+    branches: [main]
+    paths:
+      - "models/**"
+      - "pipelines/**"
+      - "scripts/**"
+      - "tests/**"
 
 env:
   PYTHON_VERSION: "3.9"
@@ -129,5 +136,5 @@ jobs:
       - name: Trigger Kubeflow Pipeline
         run: |
           python scripts/trigger_kfp.py \
-            --image harbor.gke.paasup.io/org/model:${{ github.sha }}
+            --image harbor.gke.paasup.io/org/model:${{ github.sha }} \
             --model_name model-training
