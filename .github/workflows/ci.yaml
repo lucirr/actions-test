@@ -131,3 +131,4 @@ jobs:
         run: |
           python scripts/trigger_kfp.py \
             --image harbor.gke.paasup.io/org/model:${{ github.sha }}
+            --model_name model-training
