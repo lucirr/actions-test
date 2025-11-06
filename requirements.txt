@@ -21,7 +21,7 @@ great-expectations==0.15.50
 jsonschema==4.17.3
 
 # Kubernetes
-kubernetes==28.1.0
+kubernetes==26.1.0
 
 # Monitoring
 prometheus-api-client==0.5.3
