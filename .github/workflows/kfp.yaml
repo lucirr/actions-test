@@ -1,5 +1,5 @@
-# - inferenceService 배포
-name: CD Pipeline - Production
+# - kubeflow pipeline 트리거
+name: CI Pipeline
 
 on:
   workflow_dispatch:
@@ -8,9 +8,12 @@ on:
         description: "MLflow Model Registry Version"
         required: true
 
+env:
+  PYTHON_VERSION: "3.9"
+
 jobs:
-  deploy:
-    name: Deploy
+  trigger-kubeflow:
+    name: Trigger Kubeflow Pipeline
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -19,11 +22,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies
-        run: |
-          pip install kubernetes mlflow
+      - name: Install KFP SDK
+        run: pip install kfp
 
       - name: Configure kubeconfig
         run: |
@@ -31,9 +33,8 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Deploy
+      - name: Trigger Kubeflow Pipeline
         run: |
-          python scripts/deploy_kserve.py \
-            --model-version ${{ github.event.inputs.model_version }} \
-            --namespace production \
-            --canary-percent 10
+          python scripts/trigger_kfp.py \
+            --image harbor.gke.paasup.io/org/model:${{ github.sha }}
+            --model_name model-training

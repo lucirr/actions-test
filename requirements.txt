@@ -10,38 +10,38 @@
 # scipy==1.10.1
 
 # MLflow
-mlflow==2.8.0
-boto3==1.28.0  # S3 support
+# mlflow==2.8.0
+# boto3==1.28.0  # S3 support
 
 # Kubeflow Pipelines
 kfp==2.3.0
 
 # Data Validation
-great-expectations==0.15.50
-jsonschema==4.17.3
+# great-expectations==0.15.50
+# jsonschema==4.17.3
 
 # Kubernetes
 kubernetes==26.1.0
 
 # Monitoring
-prometheus-api-client==0.5.3
+# prometheus-api-client==0.5.3
 
 # KServe
 kserve==0.11.0
 
 # Testing
-pytest==7.4.0
-pytest-cov==4.1.0
-pytest-mock==3.11.1
+# pytest==7.4.0
+# pytest-cov==4.1.0
+# pytest-mock==3.11.1
 
 # Code Quality
-black==23.7.0
-flake8==6.0.0
-pylint==2.17.5
-mypy==1.4.1
-bandit==1.7.5
+# black==23.7.0
+# flake8==6.0.0
+# pylint==2.17.5
+# mypy==1.4.1
+# bandit==1.7.5
 
 # Utilities
-pyyaml==6.0
-requests==2.31.0
-python-dotenv==1.0.0
+# pyyaml==6.0
+# requests==2.31.0
+# python-dotenv==1.0.0

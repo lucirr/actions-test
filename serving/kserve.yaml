@@ -2,13 +2,13 @@ apiVersion: "serving.kserve.io/v1beta1"
 kind: "InferenceService"
 metadata:
   name: "sklearn-iris"
-  namespace: kserve-test
+  namespace: ${namespace}
 spec:
   predictor:
     model:
       modelFormat:
         name: sklearn
-      storageUri: "s3://mlflow-artifacts/models/my-ml-model/v1"
+      storageUri: "s3://mlflow-artifacts/models/my-ml-model/${modelVersion}"
       resources:
         requests:
           cpu: 100m
@@ -16,4 +16,4 @@ spec:
         limits:
           cpu: 100m
           memory: 256Mi
-    canaryTrafficPercent: 10      
+    canaryTrafficPercent: ${canaryPercent}      
