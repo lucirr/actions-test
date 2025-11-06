@@ -1,5 +1,5 @@
 # - inferenceService 배포
-name: CD Pipeline - Production
+name: CD Pipeline
 
 on:
   workflow_dispatch:
