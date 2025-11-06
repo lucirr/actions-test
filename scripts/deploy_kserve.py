@@ -5,7 +5,6 @@ serving/kserve.yaml 템플릿의 변수를 치환하여 배포합니다.
 """
 
 import argparse
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,17 +17,17 @@ def load_template(template_path: str) -> str:
         return f.read()
 
 
-def substitute_variables(template_content: str, model_version: str, 
-                        namespace: str, canary_percent: int) -> str:
+def substitute_variables(template_content: str, model_version: str,
+                         namespace: str, canary_percent: int) -> str:
     """템플릿의 변수를 실제 값으로 치환합니다."""
     template = Template(template_content)
-    
+
     substituted = template.safe_substitute(
         namespace=namespace,
         modelVersion=model_version,
         canaryPercent=canary_percent
     )
-    
+
     return substituted
 
 
@@ -42,9 +41,9 @@ def apply_kserve_config(yaml_content: str) -> bool:
             stderr=subprocess.PIPE,
             text=True
         )
-        
+
         stdout, stderr = process.communicate(input=yaml_content)
-        
+
         if process.returncode == 0:
             print("KServe InferenceService 배포 성공!")
             print(stdout)
@@ -53,7 +52,7 @@ def apply_kserve_config(yaml_content: str) -> bool:
             print("KServe InferenceService 배포 실패!")
             print(stderr)
             return False
-            
+
     except FileNotFoundError:
         print("kubectl이 설치되어 있지 않습니다.")
         return False
@@ -92,25 +91,25 @@ def main():
         action='store_true',
         help='실제 배포 없이 생성될 YAML만 출력'
     )
-    
+
     args = parser.parse_args()
-    
+
     # 템플릿 파일 존재 확인
     template_path = Path(args.template_path)
     if not template_path.exists():
         print(f"템플릿 파일을 찾을 수 없습니다: {args.template_path}")
         sys.exit(1)
-    
-    print(f"KServe 배포 설정:")
+
+    print("KServe 배포 설정:")
     print(f"  - 모델 버전: {args.model_version}")
     print(f"  - 네임스페이스: {args.namespace}")
     print(f"  - 카나리 트래픽: {args.canary_percent}%")
     print(f"  - 템플릿 파일: {args.template_path}")
     print()
-    
+
     # 템플릿 로드
     template_content = load_template(args.template_path)
-    
+
     # 변수 치환
     yaml_content = substitute_variables(
         template_content,
@@ -118,11 +117,11 @@ def main():
         args.namespace,
         args.canary_percent
     )
-    
+
     # KServe 배포
     print(" KServe InferenceService 배포 중...")
     success = apply_kserve_config(yaml_content)
-    
+
     if success:
         print(f"   kubectl get inferenceservice -n {args.namespace}")
         print(f"   kubectl describe inferenceservice sklearn-iris -n {args.namespace}")
