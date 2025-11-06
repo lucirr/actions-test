@@ -90,7 +90,7 @@ jobs:
       - name: Login to Registry
         uses: docker/login-action@v2
         with:
-          registry: harbor.hopt.paasup.io
+          registry: harbor.gke.paasup.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
@@ -100,8 +100,8 @@ jobs:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: |
-            harbor.hopt.paasup.io/org/model:${{ github.sha }}
-            harbor.hopt.paasup.io/org/model:latest
+            harbor.gke.paasup.io/org/model:${{ github.sha }}
+            harbor.gke.paasup.io/org/model:latest
           build-args: |
             BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
           # cache-from: type=gha
@@ -134,4 +134,4 @@ jobs:
       - name: Trigger Kubeflow Pipeline
         run: |
           python scripts/trigger_kfp.py \
-            --image harbor.hopt.paasup.io/org/model:${{ github.sha }}
+            --image harbor.gke.paasup.io/org/model:${{ github.sha }}
