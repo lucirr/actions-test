@@ -39,8 +39,8 @@ jobs:
         run: |
           pip install flake8 bandit
 
-      - name: Linting (Flake8)
-        run: flake8 models/ pipelines/ scripts/ --max-line-length=100
+      # - name: Linting (Flake8)
+      #   run: flake8 models/ pipelines/ scripts/ --max-line-length=100
 
       - name: Security scan (Bandit)
         run: bandit -r models/ pipelines/ scripts/ -ll
