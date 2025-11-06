@@ -1,8 +1,8 @@
 FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
-WORKDIR /app
+WORKDIR /workspace
 
-# 시스템 패키지 설치
+# 시스템 패키지
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -16,13 +16,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY models/ ./models/
 COPY pipelines/ ./pipelines/
 COPY scripts/ ./scripts/
-COPY serving/ ./serving/
 COPY data/ ./data/
-COPY config/ ./config/
+COPY tests/ ./tests/
 
-# 환경 변수
+# Python path 설정
+ENV PYTHONPATH=/workspace
 ENV PYTHONUNBUFFERED=1
-ENV MLFLOW_TRACKING_URI=http://mlflow-server.mlflow.svc.cluster.local:5000
 
-# 기본 커맨드
-CMD ["python", "models/train.py", "--config", "config/training_config.yaml"]
+# 기본 작업 디렉토리
+WORKDIR /workspace

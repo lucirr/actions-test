@@ -1,2 +1,6 @@
-# 모델 학습 스크립트
-# 모델 저장 (mlflow)
+# 모델 학습
+def main():
+    print("Hello train!")
+
+if __name__ == '__main__':
+    main()    

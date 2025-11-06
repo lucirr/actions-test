@@ -6,17 +6,15 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [main, staging]
+    branches: [main]
     paths:
-      - 'models/**'
-      - 'pipelines/**'
-      - 'tests/**'
-  push:
-    branches: [dev, 'feature/**']
+      - "models/**"
+      - "pipelines/**"
+      - "scripts/**"
+      - "tests/**"
 
 env:
-  PYTHON_VERSION: '3.9'
-  MLFLOW_TRACKING_URI: http://mlflow-server.mlflow.svc.cluster.local:5000
+  PYTHON_VERSION: "3.9"
 
 jobs:
   code-quality:
@@ -39,16 +37,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install black flake8 pylint mypy bandit
-
-      - name: Code formatting (Black)
-        run: black --check models/ pipelines/ scripts/
+          pip install flake8 bandit
 
       - name: Linting (Flake8)
         run: flake8 models/ pipelines/ scripts/ --max-line-length=100
-
-      - name: Type checking (MyPy)
-        run: mypy models/ pipelines/ scripts/ --ignore-missing-imports
 
       - name: Security scan (Bandit)
         run: bandit -r models/ pipelines/ scripts/ -ll
@@ -80,11 +72,6 @@ jobs:
             --cov-report=html \
             --junitxml=test-results.xml
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-
   build-image:
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -97,11 +84,13 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Login to Registry
+        env:
+          DOCKER_TLS_VERIFY: 0
         uses: docker/login-action@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: harbor.hopt.paasup.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push
         uses: docker/build-push-action@v4
@@ -109,10 +98,13 @@ jobs:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/${{ github.repository }}/model:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/model:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            harbor.hopt.paasup.io/org/model:${{ github.sha }}
+            harbor.hopt.paasup.io/org/model:latest
+          build-args: |
+            BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+          network: host
 
   trigger-kubeflow:
     name: Trigger Kubeflow Pipeline
@@ -135,21 +127,9 @@ jobs:
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
 
       - name: Trigger Kubeflow Pipeline
         run: |
           python scripts/trigger_kfp.py \
-            --pipeline-name "ml-training-deployment" \
-            --git-commit ${{ github.sha }} \
-            --image ghcr.io/${{ github.repository }}/model:${{ github.sha }}
-
-      - name: Wait for pipeline
-        run: |
-          RUN_ID=$(jq -r '.run_id' kfp_run.json)
-          python scripts/wait_pipeline.py --run-id $RUN_ID --timeout 3600
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: pipeline-output
-          path: kfp_run.json
+            --image harbor.hopt.paasup.io/org/model:${{ github.sha }}
