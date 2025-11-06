@@ -16,6 +16,7 @@ def run_pipeline(image_tag: str):
 
   print("Kubeflow pipeline started")
 
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
