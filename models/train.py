@@ -2,5 +2,6 @@
 def main():
     print("Hello train!")
 
+
 if __name__ == '__main__':
-    main()    
+    main()
